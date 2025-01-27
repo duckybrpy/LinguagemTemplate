@@ -10,7 +10,7 @@ class Interprete:
     def parser(self):
         while self.pos < len(self.tokens):
             token, value = self.tokens[self.pos]
-            print(token, " -> ", value, self.pos)
+            print(token, " -> ", value.strip() or None, self.pos, " PARSER")
             if token == 'NAME':
                 self.handler_name()
 
@@ -42,16 +42,20 @@ class Interprete:
     # CONFIGURAR VARIAVEIS
     def handler_name(self):
         token, value = self.tokens[self.pos]
-        
+        print(token, " --> ", value, self.pos, "NAME")
         if token == "NAME":
             var_name = value
             token, value = self.next_token()
-                
+            
+            print(token, " --> ", value, self.pos, "NAME")
             if token == "ASSIGN":
                 token, value = self.next_token()
-                
+                print(token, " --> ", value, self.pos, "NAME")
                 if token == "STRING":
                     self.variables[var_name] = value
+
+                elif token == "NUMBER":
+                    self.variables[var_name] = int(value)
                     
 
 
@@ -90,11 +94,17 @@ class Interprete:
         
                     c = self.conditions()
 
+                    print(c, "IF")
+
                     if c and not condition:
                         condition = True
-                        self.next_token(skip=True)
-                        
-                        self.exec_block()
+                        token, value = self.next_token(skip=True)
+                        print(token, " ->", value, " IF", self.pos)
+                        if token == "RPAREN":
+                            token, value = self.next_token(skip=True)
+                            if token == "LBRACE":
+                                self.exec_block()
+                    
                     else:
                         self.skip_block()
                 
@@ -102,10 +112,16 @@ class Interprete:
                     
             
             elif token == "ELSE":
-                self.exec_block()
+                token, value = self.next_token(skip=True)
+                print(token, " ->", value, " IF - ELSE", self.pos)
+                if token == "LBRACE" and not condition:
+                    self.exec_block()
+                
+                else:
+                    self.skip_block()
             
             else:
-                self.skip_block
+                self.pos += 1
 
 
         pass
@@ -116,11 +132,12 @@ class Interprete:
         l = self.get_value()
 
         token, operator = self.next_token()
-        print(token, "--> ", operator, "if", self.pos)
+        print(token, "--> ", operator, "CONDITIONS", self.pos)
         self.next_token()
 
         v = self.get_value()
         
+        print(l, operator, v, "VERIFY")
 
         if operator == "==":
             return l == v
@@ -139,9 +156,9 @@ class Interprete:
         
         elif operator == "=<":
             return l <= v
-        
-        
-        return False
+
+        else:
+            return False
 
 
     # FAZER A EXECUCAO DO BLOCO
